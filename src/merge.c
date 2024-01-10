@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "merge.h"
 #include "chunk.h"
 
@@ -21,11 +22,10 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
      // Create iterators for input and output chunks
     CHUNK_Iterator inputIterator = CHUNK_CreateIterator(input_FileDesc, chunkSize * bWay);
     CHUNK_Iterator outputIterator = CHUNK_CreateIterator(output_FileDesc, chunkSize);
-
     while (1) {
         // Allocate memory for b chunks
         CHUNK* chunks = (CHUNK*)malloc(sizeof(CHUNK) * bWay);
-        CHUNK* output_chunks = (CHUNK*)malloc(sizeof(CHUNK) * (bWay/2))
+        CHUNK* output_chunks = (CHUNK*)malloc(sizeof(CHUNK) * (bWay/2));
 
         int output_chunk_counter = 0;
         int output_record_counter = 0;
@@ -37,8 +37,6 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
         }
         int* records_counter=(int*)malloc(sizeof(int)*bWay);
         Record* min_records=(Record*)malloc(sizeof(Record)*bWay);
-
-       
 
         // Initialize the structures
         while(1){
@@ -78,9 +76,15 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
             }
             if(should_stop){
                 break;
-
             }
         }
-        // TODO: Free arrays
+
+        free(min_records);
+        free(records_counter);
+        free(output_chunks);
+        free(chunks);
+
+        if (HP_GetIdOfLastBlock(input_FileDesc) == inputIterator.lastBlocksID)
+            break;
     }
 }
