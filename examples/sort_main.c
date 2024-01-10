@@ -19,8 +19,8 @@ void mergePhases(int inputFileDesc,int chunkSize,int bWay, int* fileCounter);
 int nextOutputFile(int* fileCounter);
 
 int main() {
-  int chunkSize=5;
-  int bWay= 4;
+  int chunkSize = 5;
+  int bWay = 4;
   int fileIterator;
   //
   BF_Init(LRU);
@@ -48,6 +48,8 @@ int createAndPopulateHeapFile(char* filename){
 /*Performs the sorting phase of external merge sort algorithm on a file specified by 'file_desc', using chunks of size 'chunkSize'*/
 void sortPhase(int file_desc,int chunkSize){ 
   sort_FileInChunks( file_desc, chunkSize);
+
+  //HP_PrintAllEntries(file_desc);
 }
 
 /* Performs the merge phase of the external merge sort algorithm  using chunks of size 'chunkSize' and 'bWay' merging. The merge phase may be performed in more than one cycles.*/
