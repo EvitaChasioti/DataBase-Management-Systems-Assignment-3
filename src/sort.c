@@ -23,19 +23,16 @@ bool shouldSwap(Record *rec1, Record *rec2) {
 
 void sort_FileInChunks(int file_desc, int numBlocksInChunk){
     CHUNK_Iterator chunk_iterator = CHUNK_CreateIterator(file_desc, numBlocksInChunk);
-    BF_Block* block; BF_Block_Init(&block);
-    void* data;
+    int lastBlockId=HP_GetIdOfLastBlock(file_desc);
 
-    CALL_BF(BF_GetBlock(file_desc, 0, block));
-    data = BF_Block_GetData(block);
+    CHUNK chunk;
 
-    HP_info* hp_info = data;
-
-    CHUNK* chunk;
-
-    for (int i = 0; i < (int)(hp_info->lastBlockId / numBlocksInChunk); i++) {
-        CHUNK_GetNext(&chunk_iterator, chunk);
-        sort_Chunk(chunk);
+    for (int i = 0; i < (int)(lastBlockId / numBlocksInChunk); i++) {
+        CHUNK_GetNext(&chunk_iterator, &chunk);
+        sort_Chunk(&chunk);
+        
+        printf("--New Chunk--\n");
+        CHUNK_Print(chunk);
     }
 }
 
@@ -52,15 +49,12 @@ void sort_Chunk(CHUNK* chunk) {
     // Initialize the iterator for the chunk
     CHUNK_RecordIterator iterator = CHUNK_CreateRecordIterator(chunk);
 
+
     // Populate the records array with records from the chunk
     for (int i = 0; i < chunk->recordsInChunk; i++) {
-        if (CHUNK_GetNextRecord(&iterator, &records[i]) == -1) {
-            // Handle the error, for example, by returning from the function or taking appropriate action.
-            free(records);
-            return;
-        }
+        CHUNK_GetNextRecord(&iterator, &records[i]);
     }
-
+    
     // Use the shouldSwap function to perform the sorting
     for (int i = 0; i < chunk->recordsInChunk - 1; i++) {
         for (int j = 0; j < chunk->recordsInChunk - i - 1; j++) {
@@ -73,14 +67,17 @@ void sort_Chunk(CHUNK* chunk) {
         }
     }
 
+    // printf("--- New ---\n");
+    // for (int i = 0; i < chunk->recordsInChunk; i++) {
+    //     printRecord(records[i]);
+    // }
+
+    printf("Sorting chunk with from: %d, to: %d\n", chunk->from_BlockId, chunk->to_BlockId);
+
     // Update the chunk with the sorted records
     iterator = CHUNK_CreateRecordIterator(chunk);
     for (int i = 0; i < chunk->recordsInChunk; i++) {
-        if (CHUNK_UpdateIthRecord(chunk, i, records[i]) == -1) {
-            // Handle the error, for example, by returning from the function or taking appropriate action.
-            free(records);
-            return;
-        }
+        CHUNK_UpdateIthRecord(chunk, i, records[i]);
     }
 
     // Free the allocated memory
