@@ -31,8 +31,8 @@ void sort_FileInChunks(int file_desc, int numBlocksInChunk){
         CHUNK_GetNext(&chunk_iterator, &chunk);
         sort_Chunk(&chunk);
         
-        printf("--New Chunk--\n");
-        CHUNK_Print(chunk);
+        // printf("--New Chunk--\n");
+        // CHUNK_Print(chunk);
     }
 }
 
