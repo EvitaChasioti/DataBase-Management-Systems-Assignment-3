@@ -58,8 +58,11 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
     CHUNK_Iterator output_iterator = CHUNK_CreateIterator(output_FileDesc, blocks_num * bWay);
 
     int help = 0;
+    printf("Chunk Size: %d\nbWay: %d\n", chunkSize, bWay);
+    int iterations = HP_GetIdOfLastBlock(input_FileDesc) / (chunkSize * bWay);
+    if (HP_GetIdOfLastBlock(input_FileDesc) % (chunkSize * bWay) != 0)
+        iterations++;
 
-    int iterations = HP_GetIdOfLastBlock(input_FileDesc) / (chunkSize * bWay) + 1;
     for (int iteration = 0; iteration < iterations; iteration++) {
         printf("Another loop\n");
         printf("%d < %d\n", iteration, iterations);
@@ -67,7 +70,16 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
         if (iterations != 1 && iteration == iterations - 1) {
             int rest_blocks = HP_GetIdOfLastBlock(input_FileDesc) - input_iterator.current + 1;
             printf("Rest Blocks: %d\n", rest_blocks);
-            bWay = rest_blocks % chunkSize; 
+            if (chunkSize * bWay != rest_blocks) {
+                int new_bWay = rest_blocks / chunkSize; 
+                if (new_bWay != 0) {
+                    bWay = new_bWay;
+                    if (rest_blocks > chunkSize)
+                        bWay++;
+                }
+                else
+                    bWay--;
+            }
         }
 
         int* min_chunks_records_pos = (int*)malloc(sizeof(int) * bWay);
@@ -116,18 +128,10 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
             CHUNK_GetIthRecordInChunk(&chunks[min_record_pos], min_chunks_records_pos[min_record_pos], &new_record);
             min_chunks_records[min_record_pos] = new_record;
         }
-        
-        int should_stop = 0;
-        if (chunks[bWay - 1].to_BlockId == HP_GetIdOfLastBlock(input_FileDesc))
-            should_stop = 1;
 
         free(min_chunks_records_pos); free(max_records_in_chunks); free(min_chunks_records); free(chunks); free(chunk_completed);
         
         help++;
-
-        if (should_stop)
-            break;
-
     }
 }
 
