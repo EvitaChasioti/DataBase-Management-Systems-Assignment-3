@@ -26,14 +26,50 @@ void sort_FileInChunks(int file_desc, int numBlocksInChunk){
     int lastBlockId=HP_GetIdOfLastBlock(file_desc);
 
     CHUNK chunk;
-
-    for (int i = 0; i < (int)(lastBlockId / numBlocksInChunk); i++) {
+    int iterations = (int)(lastBlockId / numBlocksInChunk);
+    for (int i = 0; i < iterations; i++) {
         CHUNK_GetNext(&chunk_iterator, &chunk);
         sort_Chunk(&chunk);
-        
-        // printf("--New Chunk--\n");
-        // CHUNK_Print(chunk);
     }
+
+    // Sort the remaining blocks
+    int rest_blocks = lastBlockId % numBlocksInChunk;
+    int starting_block_id = iterations * numBlocksInChunk + 1;
+    
+    int num_records = 0;
+    for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
+        num_records += HP_GetRecordCounter(file_desc, id);
+    }
+
+    Record* records = (Record*)malloc(sizeof(Record) * num_records);
+    int counter = 0;
+    for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
+        for (int rec_counter = 0; rec_counter < HP_GetRecordCounter(file_desc, id); rec_counter++) {
+            HP_GetRecord(file_desc, id, rec_counter, &records[counter]);
+            counter++;
+        }
+    }
+
+    // Use the shouldSwap function to perform the sorting
+    for (int i = 0; i < num_records - 1; i++) {
+        for (int j = 0; j < num_records - i - 1; j++) {
+            if (shouldSwap(&records[j], &records[j + 1])) {
+                // Swap records if shouldSwap returns true
+                Record temp = records[j];
+                records[j] = records[j + 1];
+                records[j + 1] = temp;
+            }
+        }
+    }
+
+    counter = 0;
+    for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
+        for (int rec_counter = 0; rec_counter < HP_GetRecordCounter(file_desc, id); rec_counter++) {
+            HP_UpdateRecord(file_desc, id, rec_counter, records[counter]);
+            counter++;
+        }
+    }
+        
 }
 
 void sort_Chunk(CHUNK* chunk) {
@@ -71,8 +107,6 @@ void sort_Chunk(CHUNK* chunk) {
     // for (int i = 0; i < chunk->recordsInChunk; i++) {
     //     printRecord(records[i]);
     // }
-
-    printf("Sorting chunk with from: %d, to: %d\n", chunk->from_BlockId, chunk->to_BlockId);
 
     // Update the chunk with the sorted records
     iterator = CHUNK_CreateRecordIterator(chunk);

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "merge.h"
 
-#define RECORDS_NUM 64 // you can change it if you want
+#define RECORDS_NUM 576 // you can change it if you want
 #define FILE_NAME "data.db"
 #define OUT_NAME "out"
 
@@ -55,13 +55,14 @@ void sortPhase(int file_desc,int chunkSize){
 /* Performs the merge phase of the external merge sort algorithm  using chunks of size 'chunkSize' and 'bWay' merging. The merge phase may be performed in more than one cycles.*/
 void mergePhases(int inputFileDesc,int chunkSize,int bWay, int* fileCounter){
   int oututFileDesc;
-  while(chunkSize<=HP_GetIdOfLastBlock(inputFileDesc)){
+  while(chunkSize<HP_GetIdOfLastBlock(inputFileDesc)){
     oututFileDesc =   nextOutputFile(fileCounter);
     merge(inputFileDesc, chunkSize, bWay, oututFileDesc );
     HP_CloseFile(inputFileDesc);
     chunkSize*=bWay;
     inputFileDesc = oututFileDesc;
   }
+  HP_PrintAllEntries(oututFileDesc);
   HP_CloseFile(oututFileDesc);
 }
 

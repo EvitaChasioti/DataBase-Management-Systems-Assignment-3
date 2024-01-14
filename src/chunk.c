@@ -23,10 +23,14 @@ int CHUNK_GetNext(CHUNK_Iterator* iterator, CHUNK* chunk) {
     chunk->file_desc = iterator->file_desc;
     chunk->from_BlockId = iterator->current;
     chunk->to_BlockId = iterator->current + iterator->blocksInChunk - 1;
+    if (chunk->to_BlockId > HP_GetIdOfLastBlock(chunk->file_desc))
+        chunk->to_BlockId -= (chunk->to_BlockId - HP_GetIdOfLastBlock(chunk->file_desc));
     chunk->blocksInChunk = iterator->blocksInChunk;
 
     
     chunk->recordsInChunk = 0;  // Initialize to 0
+    
+    printf("!!!%d %d\n", chunk->from_BlockId, chunk->to_BlockId);
     for (int id = chunk->from_BlockId; id <= chunk->to_BlockId; id++) {
         chunk->recordsInChunk += HP_GetRecordCounter(chunk->file_desc, id);
     }
@@ -39,7 +43,6 @@ int CHUNK_GetNext(CHUNK_Iterator* iterator, CHUNK* chunk) {
 
 int CHUNK_GetIthRecordInChunk(CHUNK* chunk,  int i, Record* record){
     CHUNK_RecordIterator record_iterator = CHUNK_CreateRecordIterator(chunk);
-
     for (int j = 0; j < i; j++) {
         CHUNK_GetNextRecord(&record_iterator, record);
     }

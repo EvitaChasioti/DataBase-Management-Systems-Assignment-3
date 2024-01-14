@@ -40,22 +40,36 @@ int get_min_record_position(Record* records, int* chunk_completed, int size) {
     return minPosition;
 }
 
-int should_stop_insertion(int* array1, int* array2, int size) {
-    for (int i = 0; i < size; i++)
-        if (array1[i] != array2[i])
+int should_stop_insertion(int* completed, int size) {
+    for (int i = 0; i < size; i++) {
+        if (!completed[i])
             return 0;
+    }
     
     return 1;
 }
 
 void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
     printf("----11111----\n");
-    HP_PrintAllEntries(input_FileDesc);
-    CHUNK_Iterator input_iterator = CHUNK_CreateIterator(input_FileDesc, chunkSize);
-    CHUNK_Iterator output_iterator = CHUNK_CreateIterator(output_FileDesc, chunkSize * bWay);
+    //HP_PrintAllEntries(input_FileDesc);
+
+    int blocks_num = chunkSize;
+    CHUNK_Iterator input_iterator = CHUNK_CreateIterator(input_FileDesc, blocks_num);
+    CHUNK_Iterator output_iterator = CHUNK_CreateIterator(output_FileDesc, blocks_num * bWay);
 
     int help = 0;
-    while (1) {
+
+    int iterations = HP_GetIdOfLastBlock(input_FileDesc) / (chunkSize * bWay) + 1;
+    for (int iteration = 0; iteration < iterations; iteration++) {
+        printf("Another loop\n");
+        printf("%d < %d\n", iteration, iterations);
+
+        if (iterations != 1 && iteration == iterations - 1) {
+            int rest_blocks = HP_GetIdOfLastBlock(input_FileDesc) - input_iterator.current + 1;
+            printf("Rest Blocks: %d\n", rest_blocks);
+            bWay = rest_blocks % chunkSize; 
+        }
+
         int* min_chunks_records_pos = (int*)malloc(sizeof(int) * bWay);
         int* max_records_in_chunks = (int*)malloc(sizeof(int) * bWay);
         Record* min_chunks_records = (Record*)malloc(sizeof(Record) * bWay);
@@ -65,23 +79,32 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
         int output_records = 1;
 
         // Creating the arrays with the min records of each chunk and their position
+        printf("BWAY: %d\n", bWay);
         for (int i = 0; i < bWay; i++) {
             CHUNK current_chunk;
             CHUNK_GetNext(&input_iterator, &current_chunk);
 
-            printf("%d %d\n", help, input_FileDesc);
+            if (current_chunk.from_BlockId == 1 && current_chunk.to_BlockId == HP_GetIdOfLastBlock(input_FileDesc)) {
+                return;
+            }
+
+            //printf("%d %d\n", help, input_FileDesc);
             CHUNK_GetIthRecordInChunk(&current_chunk, 1, &min_chunks_records[i]);
             min_chunks_records_pos[i] = 1;
             max_records_in_chunks[i] = current_chunk.recordsInChunk;
             chunks[i] = current_chunk;
             chunk_completed[i] = 0;
         }
-        while (!should_stop_insertion(min_chunks_records_pos, max_records_in_chunks, bWay)){
+        printf("--- %d, %d\n", max_records_in_chunks[0], max_records_in_chunks[1]);
+
+        while (!should_stop_insertion(chunk_completed, bWay)){
             // Getting the minimum record in the array
             int min_record_pos = get_min_record_position(min_chunks_records, chunk_completed, bWay);
             Record min_record = min_chunks_records[min_record_pos];
             
             // Writing the minimum record to the output chunk
+            //printf("Min Id: %d\n", min_record.id);
+
             HP_InsertEntry(output_FileDesc, min_record);
 
             if (min_chunks_records_pos[min_record_pos] < max_records_in_chunks[min_record_pos])
@@ -99,11 +122,12 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
             should_stop = 1;
 
         free(min_chunks_records_pos); free(max_records_in_chunks); free(min_chunks_records); free(chunks); free(chunk_completed);
+        
+        help++;
 
         if (should_stop)
             break;
 
-        help++;
     }
 }
 
