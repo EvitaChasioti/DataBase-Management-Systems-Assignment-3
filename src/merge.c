@@ -5,6 +5,7 @@
 #include "merge.h"
 #include "chunk.h"
 
+// Function to compare two records based on name and surname
 static bool compare_records(Record* rec1, Record* rec2) {
     // Compare based on name first
     int nameComparison = strcmp(rec1->name, rec2->name);
@@ -18,6 +19,7 @@ static bool compare_records(Record* rec1, Record* rec2) {
     return (nameComparison > 0); // Swap if rec1's name comes after rec2's name
 }
 
+// Find the position of the minimum record in an array of records
 int get_min_record_position(Record* records, int* chunk_completed, int size) {
     if (size <= 0) {
         // Return -1 to indicate an empty array or handle the error appropriately
@@ -40,6 +42,7 @@ int get_min_record_position(Record* records, int* chunk_completed, int size) {
     return minPosition;
 }
 
+// Check if all chunks have been completed
 int should_stop_insertion(int* completed, int size) {
     for (int i = 0; i < size; i++) {
         if (!completed[i])
@@ -49,6 +52,7 @@ int should_stop_insertion(int* completed, int size) {
     return 1;
 }
 
+// Merge chunks from an input file into an output file
 void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
     printf("----11111----\n");
     //HP_PrintAllEntries(input_FileDesc);
@@ -59,6 +63,8 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
 
     int help = 0;
     printf("Chunk Size: %d\nbWay: %d\n", chunkSize, bWay);
+
+    // Calculate the number of iterations needed for the merge
     int iterations = HP_GetIdOfLastBlock(input_FileDesc) / (chunkSize * bWay);
     if (HP_GetIdOfLastBlock(input_FileDesc) % (chunkSize * bWay) != 0)
         iterations++;
@@ -67,9 +73,12 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
         printf("Another loop\n");
         printf("%d < %d\n", iteration, iterations);
 
+        // Handle the last iteration with a potentially incomplete set of blocks
         if (iterations != 1 && iteration == iterations - 1) {
             int rest_blocks = HP_GetIdOfLastBlock(input_FileDesc) - input_iterator.current + 1;
             printf("Rest Blocks: %d\n", rest_blocks);
+
+            // Adjust bWay based on the remaining blocks
             if (chunkSize * bWay != rest_blocks) {
                 int new_bWay = rest_blocks / chunkSize; 
                 if (new_bWay != 0) {
@@ -82,6 +91,7 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
             }
         }
 
+        // Allocate arrays and structures needed for the merge
         int* min_chunks_records_pos = (int*)malloc(sizeof(int) * bWay);
         int* max_records_in_chunks = (int*)malloc(sizeof(int) * bWay);
         Record* min_chunks_records = (Record*)malloc(sizeof(Record) * bWay);
@@ -90,7 +100,7 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
 
         int output_records = 1;
 
-        // Creating the arrays with the min records of each chunk and their position
+        // Create arrays with the min records of each chunk and their position
         printf("BWAY: %d\n", bWay);
         for (int i = 0; i < bWay; i++) {
             CHUNK current_chunk;
@@ -109,99 +119,31 @@ void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
         }
         printf("--- %d, %d\n", max_records_in_chunks[0], max_records_in_chunks[1]);
 
+        // Perform the merge until all chunks are completed
         while (!should_stop_insertion(chunk_completed, bWay)){
-            // Getting the minimum record in the array
+            // Get the position of the minimum record in the array
             int min_record_pos = get_min_record_position(min_chunks_records, chunk_completed, bWay);
             Record min_record = min_chunks_records[min_record_pos];
             
-            // Writing the minimum record to the output chunk
+            // Write the minimum record to the output chunk
             //printf("Min Id: %d\n", min_record.id);
-
             HP_InsertEntry(output_FileDesc, min_record);
 
+            // Move to the next record in the chunk or mark the chunk as completed
             if (min_chunks_records_pos[min_record_pos] < max_records_in_chunks[min_record_pos])
                 min_chunks_records_pos[min_record_pos]++;
             else 
                 chunk_completed[min_record_pos] = 1;
 
+            // Update the min_chunks_records array with the next record in the chunk
             Record new_record;
             CHUNK_GetIthRecordInChunk(&chunks[min_record_pos], min_chunks_records_pos[min_record_pos], &new_record);
             min_chunks_records[min_record_pos] = new_record;
         }
 
+        // Free allocated memory
         free(min_chunks_records_pos); free(max_records_in_chunks); free(min_chunks_records); free(chunks); free(chunk_completed);
         
         help++;
     }
 }
-
-// void merge(int input_FileDesc, int chunkSize, int bWay, int output_FileDesc) {
-//      // Create iterators for input and output chunks
-//     CHUNK_Iterator inputIterator = CHUNK_CreateIterator(input_FileDesc, chunkSize * bWay);
-//     CHUNK_Iterator outputIterator = CHUNK_CreateIterator(output_FileDesc, chunkSize);
-//     while (1) {
-//         // Allocate memory for b chunks
-//         CHUNK* chunks = (CHUNK*)malloc(sizeof(CHUNK) * bWay);
-//         CHUNK* output_chunks = (CHUNK*)malloc(sizeof(CHUNK) * (bWay/2));
-
-//         int output_chunk_counter = 0;
-//         int output_record_counter = 0;
-
-//         // Check for memory allocation failure
-//         if (chunks == NULL) {
-//             // Handle the error, for example, by returning from the function or taking appropriate action.
-//             return;
-//         }
-//         int* records_counter=(int*)malloc(sizeof(int)*bWay);
-//         Record* min_records=(Record*)malloc(sizeof(Record)*bWay);
-
-//         // Initialize the structures
-//         while(1){
-//             for (int i = 0; i < bWay; i++) {
-//                 CHUNK_GetNext(&inputIterator, &chunks[i]);
-//                 records_counter[i] = chunks[i].recordsInChunk;
-//                 CHUNK_GetIthRecordInChunk(&chunks[i], chunks[i].recordsInChunk-records_counter[i], &min_records[i]);
-//             }
-
-//             for (int i = 0; i < (bWay/2); i++) {
-//                 CHUNK_GetNext(&outputIterator, &output_chunks[i]);
-//             }
-
-//             Record min_record = min_records[0];
-//             int min_pos = 0;
-//             for (int i = 1; i < bWay; i++) {
-//                 if (compare_records(&min_record, &min_records[i])) {
-//                     min_record = min_records[i];
-//                     min_pos = i;
-//                 }
-//             }
-
-//             CHUNK_UpdateIthRecord(&output_chunks[output_chunk_counter], output_record_counter, min_record);
-//             output_record_counter++;
-//             records_counter[min_pos]--;
-
-//             if (output_record_counter == (bWay/2)) {
-//                 output_record_counter = 0;
-//                 output_chunk_counter++;
-//             }
-//             int should_stop=1;
-//             for(int i=0;i<bWay;i++) {
-//                 if(records_counter[i]!=0){
-//                     should_stop=0;
-//                     break;
-//                 }
-//             }
-//             if(should_stop){
-//                 break;
-//             }
-//         }
-
-//         free(min_records);
-//         free(records_counter);
-//         free(output_chunks);
-//         free(chunks);
-
-//         if (HP_GetIdOfLastBlock(input_FileDesc) == inputIterator.lastBlocksID)
-//             break;
-//     }
-// }
