@@ -55,16 +55,12 @@ Merge:
 Τα σημεία στα οποία αξιοποιήθηκε η τεχνητή νοημοσύνη, με το μοντέλο γλωσσικής επεξεργασίας ChatGPT 3.5, βρίσκετε στους παρακάτω συνδέσμους:
 
 
-[1]*:https://discord.com/channels/@me/1090230389240496168/1193606272927400036 (chunk lib 1)
-[2]*:https://discord.com/channels/@me/1090230389240496168/1193606336466931822 (chunk lib 2)
-[3]:
-[4]:
-[5]:
-[6]:
-[7]:
-[8]:
-[9]:
-[10]:
-
+[1]*: https://chat.openai.com/share/dbc862ba-b04d-417b-910c-d9ac00abf858 (chunk lib 1)
+[2]*: https://chat.openai.com/share/1dd5dd23-5953-43a0-9e5f-0aa7cf6801b9 (chunk lib 2)
+[3]: https://chat.openai.com/share/8ff92deb-c8ac-469f-9a81-552409b83b2c (chunk lib 3)
+[4]*: https://chat.openai.com/share/b860f62c-2843-4b68-82ac-8793bfe2bb1e (Sort Records by Name)
+[5]: https://chat.openai.com/share/0fb72a17-7840-4dd4-b17a-100f6d3b7465 (Implement Function for CHUNK)
+[6]: https://chat.openai.com/share/974c2c01-477a-4f86-95f1-1028a82fa972 (Merging chat)
+[7]*: https://chat.openai.com/share/ba66be3c-ca43-462b-9671-6c717499facd (Helping functions)
 
 Απο τις παραπομπές οι οποίες φέρουν *, χρησιμοποιήθηκαν συναρτήσεις αυτούσιες, απο τις υπόλοιπες συνομιλίες χρησιμοποιήθηκαν είτε αποσπασματικά κομματια κώδικα ή η λογική η οποία περιγράφονταν σχετικά με το κώδικά με τις ανάλογες προσαρμογές ώστε να καθίσταται το πρόγραμμα λειτουργικό.
