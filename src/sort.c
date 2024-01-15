@@ -8,6 +8,7 @@
 #include "merge.h"
 #include "chunk.h"
 
+// Function to determine whether two records should be swapped based on name and surname
 bool shouldSwap(Record *rec1, Record *rec2) {
     // Compare based on name first
     int nameComparison = strcmp(rec1->name, rec2->name);
@@ -21,12 +22,15 @@ bool shouldSwap(Record *rec1, Record *rec2) {
     return (nameComparison > 0); // Swap if rec1's name comes after rec2's name
 }
 
-void sort_FileInChunks(int file_desc, int numBlocksInChunk){
+// Sorts the records in a file by chunks
+void sort_FileInChunks(int file_desc, int numBlocksInChunk) {
     CHUNK_Iterator chunk_iterator = CHUNK_CreateIterator(file_desc, numBlocksInChunk);
-    int lastBlockId=HP_GetIdOfLastBlock(file_desc);
+    int lastBlockId = HP_GetIdOfLastBlock(file_desc);
 
     CHUNK chunk;
     int iterations = (int)(lastBlockId / numBlocksInChunk);
+
+    // Sort each chunk individually
     for (int i = 0; i < iterations; i++) {
         CHUNK_GetNext(&chunk_iterator, &chunk);
         sort_Chunk(&chunk);
@@ -35,14 +39,16 @@ void sort_FileInChunks(int file_desc, int numBlocksInChunk){
     // Sort the remaining blocks
     int rest_blocks = lastBlockId % numBlocksInChunk;
     int starting_block_id = iterations * numBlocksInChunk + 1;
-    
+
     int num_records = 0;
     for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
         num_records += HP_GetRecordCounter(file_desc, id);
     }
 
-    Record* records = (Record*)malloc(sizeof(Record) * num_records);
+    Record *records = (Record *)malloc(sizeof(Record) * num_records);
     int counter = 0;
+
+    // Retrieve records from the remaining blocks
     for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
         for (int rec_counter = 0; rec_counter < HP_GetRecordCounter(file_desc, id); rec_counter++) {
             HP_GetRecord(file_desc, id, rec_counter, &records[counter]);
@@ -63,16 +69,21 @@ void sort_FileInChunks(int file_desc, int numBlocksInChunk){
     }
 
     counter = 0;
+
+    // Update the records in the file with the sorted records
     for (int id = starting_block_id; id < starting_block_id + rest_blocks; id++) {
         for (int rec_counter = 0; rec_counter < HP_GetRecordCounter(file_desc, id); rec_counter++) {
             HP_UpdateRecord(file_desc, id, rec_counter, records[counter]);
             counter++;
         }
     }
-        
+
+    // Free the allocated memory
+    free(records);
 }
 
-void sort_Chunk(CHUNK* chunk) {
+// Sorts the records in a given chunk
+void sort_Chunk(CHUNK *chunk) {
     // Allocate memory for an array of records
     Record *records = (Record *)malloc(sizeof(Record) * chunk->recordsInChunk);
 
@@ -85,12 +96,11 @@ void sort_Chunk(CHUNK* chunk) {
     // Initialize the iterator for the chunk
     CHUNK_RecordIterator iterator = CHUNK_CreateRecordIterator(chunk);
 
-
     // Populate the records array with records from the chunk
     for (int i = 0; i < chunk->recordsInChunk; i++) {
         CHUNK_GetNextRecord(&iterator, &records[i]);
     }
-    
+
     // Use the shouldSwap function to perform the sorting
     for (int i = 0; i < chunk->recordsInChunk - 1; i++) {
         for (int j = 0; j < chunk->recordsInChunk - i - 1; j++) {
@@ -102,11 +112,6 @@ void sort_Chunk(CHUNK* chunk) {
             }
         }
     }
-
-    // printf("--- New ---\n");
-    // for (int i = 0; i < chunk->recordsInChunk; i++) {
-    //     printRecord(records[i]);
-    // }
 
     // Update the chunk with the sorted records
     iterator = CHUNK_CreateRecordIterator(chunk);
